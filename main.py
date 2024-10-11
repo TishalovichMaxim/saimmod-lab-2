@@ -1,7 +1,6 @@
 from model import *
 from event import *
-from time_generation import calc_next_visitor_arrival_time
-from activity import ModelState, end_activity, visitor_arrival_activity
+from activity import ModelState
 
 N_SIMULATIONS = 200
 SIMULATION_TIME = 100
@@ -11,20 +10,13 @@ n_free_call_rooms = N_CALL_ROOMS
 
 state = ModelState(
             0,
-            0,
-            0,
-            Cashier(),
-            Cashier(),
-            []
+            Cashier(1),
+            Cashier(2),
+            [],
+            N_CALL_ROOMS
         )
 
-state.add_event(
-    Event(
-        None,
-        end_activity,
-        SIMULATION_TIME
-    )
-)
+state.add_end_event(SIMULATION_TIME)
 
 state.add_visitor_arrival_event()
 
@@ -35,6 +27,4 @@ while not end_of_simulation:
 
     state.curr_time = event.time
     end_of_simulation = event.activity(event.info)
-
-print("The end")
 

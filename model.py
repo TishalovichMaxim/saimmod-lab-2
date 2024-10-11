@@ -2,11 +2,14 @@ from dataclasses import dataclass
 
 @dataclass
 class Visitor:
+    id: int
     arrival_time: float
-    call_end_time: float
+    choosing_call_room_start_time: float
+    leave_time: float
 
 class Cashier:
-    def __init__(self) -> None:
+    def __init__(self, id: int) -> None:
+        self.id = id
         self._visitors_processing_time = 0
         self.free = True
 
