@@ -1,12 +1,10 @@
 from model import *
 from event import *
 from activity import ModelState
+from metrics import *
 
-N_SIMULATIONS = 200
 SIMULATION_TIME = 100
 N_CALL_ROOMS = 5
-
-n_free_call_rooms = N_CALL_ROOMS
 
 state = ModelState(
             0,
@@ -27,4 +25,12 @@ while not end_of_simulation:
 
     state.curr_time = event.time
     end_of_simulation = event.activity(event.info)
+
+print()
+print("Metrics:")
+print(f"Cashier 1 load coeff = {calc_cashier_load_coeff(state.cashier1, SIMULATION_TIME)}")
+print(f"Cashier 2 load coeff = {calc_cashier_load_coeff(state.cashier2, SIMULATION_TIME)}")
+print(f"Avg visitor in system time = {calc_avg_in_system_time(state.gone_visitors)}")
+print(f"Avg in queue time = {calc_avg_in_queue_time(state.gone_visitors)}")
+print(f"Avg wait for call queue length = {(calc_avg_queue_len(state.call_wait_queue_len_to_time))}")
 

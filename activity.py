@@ -1,7 +1,7 @@
 from time_generation import *
 from dataclasses import dataclass
 import heapq as hq
-from typing import List
+from typing import List, Tuple
 from model import *
 from event import *
 import random
@@ -16,13 +16,29 @@ class ModelState:
 
         self._prev_visitor_id = 0
         self.curr_time = curr_time
-        self.call_waiting_queue: List[Visitor] = [] 
+        self._call_waiting_queue: List[Visitor] = [] 
         self.payment_queue: List[Visitor] = []
         self.cashier1 = cashier1
         self.cashier2 = cashier2
         self.cashiers = [cashier1, cashier2]
         self.events = events
         self.free_rooms = {i for i in range(1, n_call_rooms + 1)}
+        self.gone_visitors: List[Visitor] = [] 
+        self.call_wait_queue_len_to_time: List[Tuple[int, float]] = []
+        self.prev_wait_queue_len_change_time = 0
+
+    def _add_wait_queue_len_to_time(self):
+        self.call_wait_queue_len_to_time.append((len(self._call_waiting_queue), self.curr_time - self.prev_wait_queue_len_change_time))
+
+    def add_visitor_to_wait_call_queue(self, visitor: Visitor):
+        self._add_wait_queue_len_to_time()
+        self.prev_wait_queue_len_change_time = self.curr_time
+        self._call_waiting_queue.append(visitor)
+
+    def pop_visitor_from_wait_call_queue(self) -> Visitor:
+        self._add_wait_queue_len_to_time()
+        self.prev_wait_queue_len_change_time = self.curr_time
+        return self._call_waiting_queue.pop(0)
 
     def add_event(self, event: Event):
         hq.heappush(self.events, event)
@@ -105,7 +121,7 @@ def visitor_arrival_activity(info: VisitorArrivalInfo):
 
     print(f"{info.state.curr_time} - Arrival: visitor with id = {visitor.id}")
 
-    state.call_waiting_queue.append(visitor)
+    state.add_visitor_to_wait_call_queue(visitor)
 
     state.add_cachier_check_event()
     state.add_visitor_arrival_event()
@@ -150,7 +166,7 @@ def end_choose_call_room_atvivity(info: RoomChoosingInfo):
 def cashiers_check_activity(info: CashiersCheckInfo):
     state = info.state
 
-    if not state.call_waiting_queue and not state.payment_queue:
+    if not state._call_waiting_queue and not state.payment_queue:
         return
 
     free_cashiers = list(filter(lambda cashier: cashier.free, state.cashiers))
@@ -181,7 +197,7 @@ def cashiers_check_activity(info: CashiersCheckInfo):
 
         room_choosing_time = get_time_of_room_choosing()
 
-        visitor = info.state.call_waiting_queue.pop(0)
+        visitor = info.state.pop_visitor_from_wait_call_queue()
         room = info.state.free_rooms.pop()
 
         cashier.inc_proc_time(room_choosing_time)
@@ -213,6 +229,8 @@ def payment_activity_end(info: PaymentInfo):
     info.visitor.leave_time = info.state.curr_time
 
     info.cashier.makeFree()
+
+    state.gone_visitors.append(info.visitor)
 
     state.add_cachier_check_event()
 
