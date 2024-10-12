@@ -2,9 +2,15 @@ from model import Cashier, Visitor
 from typing import List, Tuple
 
 def calc_avg_in_queue_time(gone_visitors: List[Visitor]):
+    if not gone_visitors:
+        return "There is no gone visitors"
+
     return sum(visitor.leave_time - visitor.choosing_call_room_start_time for visitor in gone_visitors)/len(gone_visitors)
 
 def calc_avg_in_system_time(gone_visitors: List[Visitor]):
+    if not gone_visitors:
+        return "There is no gone visitors"
+
     return sum(visitor.leave_time - visitor.arrival_time for visitor in gone_visitors)/len(gone_visitors)
 
 def calc_cashier_load_coeff(cashier: Cashier, modeling_time: float):

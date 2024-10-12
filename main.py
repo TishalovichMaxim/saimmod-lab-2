@@ -4,14 +4,15 @@ from activity import ModelState
 from metrics import *
 
 SIMULATION_TIME = 100
-N_CALL_ROOMS = 5
+N_CALL_ROOMS = 2
 
 state = ModelState(
             0,
             Cashier(1),
             Cashier(2),
             [],
-            N_CALL_ROOMS
+            N_CALL_ROOMS,
+            SIMULATION_TIME
         )
 
 state.add_end_event(SIMULATION_TIME)

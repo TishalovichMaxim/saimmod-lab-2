@@ -12,7 +12,8 @@ class ModelState:
                  cashier1: Cashier,
                  cashier2: Cashier,
                  events: List[Event],
-                 n_call_rooms: int) -> None:
+                 n_call_rooms: int,
+                 simulation_time: float) -> None:
 
         self._prev_visitor_id = 0
         self.curr_time = curr_time
@@ -26,6 +27,7 @@ class ModelState:
         self.gone_visitors: List[Visitor] = [] 
         self.call_wait_queue_len_to_time: List[Tuple[int, float]] = []
         self.prev_wait_queue_len_change_time = 0
+        self.simulation_time = simulation_time
 
     def _add_wait_queue_len_to_time(self):
         self.call_wait_queue_len_to_time.append((len(self._call_waiting_queue), self.curr_time - self.prev_wait_queue_len_change_time))
@@ -55,14 +57,8 @@ class ModelState:
             )
         )
 
-    def add_cachier_check_event(self):
-        self.add_event(
-            Event(
-                CashiersCheckInfo(self),
-                cashiers_check_activity,
-                self.curr_time
-            )
-        )
+    def check_cashiers(self):
+        check_cashiers_activity(CashiersCheckInfo(self))
 
     def add_visitor_arrival_event(self):
         self.add_event(
@@ -102,6 +98,7 @@ class PaymentInfo:
 class CallEndInfo:
     state: ModelState
     visitor: Visitor
+    room: int
 
 @dataclass
 class PaymentEndInfo:
@@ -110,6 +107,7 @@ class PaymentEndInfo:
     visitor: Visitor
 
 def end_activity(info: EndInfo):
+    info.state._add_wait_queue_len_to_time()
     print(f"{info.state.curr_time} - End")
     return True
 
@@ -123,8 +121,8 @@ def visitor_arrival_activity(info: VisitorArrivalInfo):
 
     state.add_visitor_to_wait_call_queue(visitor)
 
-    state.add_cachier_check_event()
     state.add_visitor_arrival_event()
+    state.check_cashiers()
 
 def start_choose_call_room_atvivity(info: RoomChoosingInfo):
     print(f"{info.state.curr_time} - Room choosing start: visitor id = {info.visitor.id}, cashier = {info.cashier.id}")
@@ -135,8 +133,7 @@ def start_choose_call_room_atvivity(info: RoomChoosingInfo):
 
     info.visitor.choosing_call_room_start_time = state.curr_time
 
-    info.cashier.makeBusy()
-    info.cashier.inc_proc_time(talk_time)
+    info.cashier.inc_proc_time(min(talk_time, info.state.simulation_time - info.state.curr_time))
 
     state.add_event(
         Event(
@@ -153,36 +150,41 @@ def end_choose_call_room_atvivity(info: RoomChoosingInfo):
     talk_time = get_time_of_call()
     info.cashier.makeFree()
 
+    print(f"{info.state.curr_time} - Call start: visitor id = {info.visitor.id}, room = {info.room}")
     state.add_event(
         Event(
-            CallEndInfo(state, info.visitor),
+            CallEndInfo(state, info.visitor, info.room),
             call_end_activity,
             state.curr_time + talk_time
         )
     )
 
-    state.add_cachier_check_event()
+    state.check_cashiers()
 
-def cashiers_check_activity(info: CashiersCheckInfo):
+def check_cashiers_activity(info: CashiersCheckInfo):
     state = info.state
 
     if not state._call_waiting_queue and not state.payment_queue:
         return
 
     free_cashiers = list(filter(lambda cashier: cashier.free, state.cashiers))
+    #print(free_cashiers)
 
     if not free_cashiers:
         return
 
     cashier = random.choice(free_cashiers)
-    cashier.makeBusy()
 
     if state.payment_queue:
+        cashier.makeBusy()
+
         visitor = state.payment_queue.pop(0)
 
         payment_time = get_time_of_payment()
 
-        cashier.inc_proc_time(payment_time)
+        cashier.inc_proc_time(min(payment_time, info.state.simulation_time - info.state.curr_time))
+
+        print(f"{info.state.curr_time} - Payment start: visitor id = {visitor.id}, cashier = {cashier.id}")
 
         state.add_event(
             Event(
@@ -195,23 +197,21 @@ def cashiers_check_activity(info: CashiersCheckInfo):
         if not info.state.free_rooms:
             return
 
-        room_choosing_time = get_time_of_room_choosing()
+        cashier.makeBusy()
 
         visitor = info.state.pop_visitor_from_wait_call_queue()
         room = info.state.free_rooms.pop()
 
-        cashier.inc_proc_time(room_choosing_time)
-
         state.add_event(
             Event(
                 RoomChoosingInfo(state, cashier, visitor, room),
-                end_choose_call_room_atvivity,
-                state.curr_time + room_choosing_time
+                start_choose_call_room_atvivity,
+                state.curr_time
             )
         )
 
     if len(free_cashiers) == 2:
-        cashiers_check_activity(info)
+        check_cashiers_activity(info)
 
 def call_end_activity(info: CallEndInfo):
     print(f"{info.state.curr_time} - Call end: visitor id = {info.visitor.id}")
@@ -219,8 +219,9 @@ def call_end_activity(info: CallEndInfo):
     state = info.state
 
     state.payment_queue.append(info.visitor)
+    state.free_rooms.add(info.room)
 
-    state.add_cachier_check_event()
+    state.check_cashiers()
 
 def payment_activity_end(info: PaymentInfo):
     print(f"{info.state.curr_time} - Payment end: visitor id = {info.visitor.id}, cashier id = {info.cashier.id}")
@@ -232,5 +233,5 @@ def payment_activity_end(info: PaymentInfo):
 
     state.gone_visitors.append(info.visitor)
 
-    state.add_cachier_check_event()
+    state.check_cashiers()
 
