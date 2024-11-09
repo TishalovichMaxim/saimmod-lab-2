@@ -5,6 +5,8 @@ from typing import List, Tuple
 from model import *
 from event import *
 import random
+from cashier import Cashier
+from visitor import Visitor
 
 class ModelState:
     def __init__(self,
@@ -48,12 +50,12 @@ class ModelState:
     def pop_event(self) -> Event:
         return hq.heappop(self.events)
 
-    def add_end_event(self, time: float):
+    def add_end_event(self):
         self.add_event(
             Event(
                 EndInfo(self),
                 end_activity,
-                time
+                self.simulation_time
             )
         )
 
@@ -108,7 +110,7 @@ class PaymentEndInfo:
 
 def end_activity(info: EndInfo):
     info.state._add_wait_queue_len_to_time()
-    print(f"{info.state.curr_time} - End")
+    #print(f"{info.state.curr_time} - End")
     return True
 
 def visitor_arrival_activity(info: VisitorArrivalInfo):
@@ -117,7 +119,7 @@ def visitor_arrival_activity(info: VisitorArrivalInfo):
 
     visitor = Visitor(state._prev_visitor_id, state.curr_time, 0, 0)
 
-    print(f"{info.state.curr_time} - Arrival: visitor with id = {visitor.id}")
+    #print(f"{info.state.curr_time} - Arrival: visitor with id = {visitor.id}")
 
     state.add_visitor_to_wait_call_queue(visitor)
 
@@ -125,7 +127,7 @@ def visitor_arrival_activity(info: VisitorArrivalInfo):
     state.check_cashiers()
 
 def start_choose_call_room_atvivity(info: RoomChoosingInfo):
-    print(f"{info.state.curr_time} - Room choosing start: visitor id = {info.visitor.id}, cashier = {info.cashier.id}")
+    #print(f"{info.state.curr_time} - Room choosing start: visitor id = {info.visitor.id}, cashier = {info.cashier.id}")
 
     state = info.state
 
@@ -144,13 +146,13 @@ def start_choose_call_room_atvivity(info: RoomChoosingInfo):
     )
 
 def end_choose_call_room_atvivity(info: RoomChoosingInfo):
-    print(f"{info.state.curr_time} - Room choosing end: visitor id = {info.visitor.id}, cashier = {info.cashier.id}")
+    #print(f"{info.state.curr_time} - Room choosing end: visitor id = {info.visitor.id}, cashier = {info.cashier.id}")
     state = info.state
 
     talk_time = get_time_of_call()
     info.cashier.makeFree()
 
-    print(f"{info.state.curr_time} - Call start: visitor id = {info.visitor.id}, room = {info.room}")
+    #print(f"{info.state.curr_time} - Call start: visitor id = {info.visitor.id}, room = {info.room}")
     state.add_event(
         Event(
             CallEndInfo(state, info.visitor, info.room),
@@ -184,7 +186,7 @@ def check_cashiers_activity(info: CashiersCheckInfo):
 
         cashier.inc_proc_time(min(payment_time, info.state.simulation_time - info.state.curr_time))
 
-        print(f"{info.state.curr_time} - Payment start: visitor id = {visitor.id}, cashier = {cashier.id}")
+        #print(f"{info.state.curr_time} - Payment start: visitor id = {visitor.id}, cashier = {cashier.id}")
 
         state.add_event(
             Event(
@@ -214,7 +216,7 @@ def check_cashiers_activity(info: CashiersCheckInfo):
         check_cashiers_activity(info)
 
 def call_end_activity(info: CallEndInfo):
-    print(f"{info.state.curr_time} - Call end: visitor id = {info.visitor.id}")
+    #print(f"{info.state.curr_time} - Call end: visitor id = {info.visitor.id}")
 
     state = info.state
 
@@ -224,7 +226,7 @@ def call_end_activity(info: CallEndInfo):
     state.check_cashiers()
 
 def payment_activity_end(info: PaymentInfo):
-    print(f"{info.state.curr_time} - Payment end: visitor id = {info.visitor.id}, cashier id = {info.cashier.id}")
+    #print(f"{info.state.curr_time} - Payment end: visitor id = {info.visitor.id}, cashier id = {info.cashier.id}")
     state = info.state
 
     info.visitor.leave_time = info.state.curr_time

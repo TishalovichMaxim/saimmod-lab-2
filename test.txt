@@ -1,0 +1,20 @@
+waiting_queue:
+6,  
+
+payment_queue:
+
+cashier1:
+2, 
+
+cashier2:
+6
+
+room 1:
+4
+
+room 2:
+
+
+room 3:
+5
+
