@@ -6,10 +6,13 @@ import random
 from task1 import task1 
 from task2 import task2 
 from task3 import task3 
+from concurrent.futures import ProcessPoolExecutor
+from typing import cast, List
+import random
 
-SIMULATION_TIME = 1_000_000
-N_CALL_ROOMS = 10
-N_RUNS = 300
+SIMULATION_TIME = 400_000
+N_CALL_ROOMS = 4
+N_RUNS = 100
 
 metrics: List[AllMetrics] = []
 
@@ -47,16 +50,20 @@ metrics: List[AllMetrics] = []
 
 #np.random.seed(11)
 #random.seed(11)
-def skip_random(i: int):
-    for i in range(100):
-        np.random.normal()
-        random.random()
+#for i in range(N_RUNS):
+#    #skip_random(i)
+#    curr_metrics = model.run(SIMULATION_TIME)
+#    metrics.append(curr_metrics)
 
-model = CallPointModel(N_CALL_ROOMS)
-for i in range(N_RUNS):
-    skip_random(i)
-    curr_metrics = model.run(SIMULATION_TIME)
-    metrics.append(curr_metrics)
+def func(i: int):
+    np.random.seed(i + 1)
+    random.seed(i - 2)
+    model = CallPointModel(N_CALL_ROOMS)
+    curr_metrics = model.run(SIMULATION_TIME, 100_000)
+    return curr_metrics
+
+with ProcessPoolExecutor() as executor:
+    metrics = cast(List[AllMetrics], list(executor.map(func, range(N_RUNS))))
 
 #for _ in range(N_RUNS):
 #    run()
@@ -69,5 +76,5 @@ print(f"Avg visitor in system time = {sum(map(lambda m: m.avg_in_system_time, me
 print(f"Avg in queue time = {sum(map(lambda m: m.avg_in_queue_time, metrics))/len(metrics)}")
 print(f"Avg wait for call queue length = {sum(map(lambda m: m.avg_queue_len, metrics))/len(metrics)}")
 
-task1(metrics)
+task3(metrics)
 

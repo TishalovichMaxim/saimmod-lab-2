@@ -7,3 +7,6 @@ class Visitor:
     choosing_call_room_start_time: float
     leave_time: float
 
+    def __str__(self) -> str:
+        return f"{self.id}: {self.arrival_time}"
+

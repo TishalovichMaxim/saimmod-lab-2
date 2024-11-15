@@ -15,3 +15,5 @@ class Cashier:
     def makeFree(self):
         self.free = True
 
+    def __str__(self) -> str:
+        return f"{self.id}: {self._visitors_processing_time}, {self.free}"
