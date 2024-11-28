@@ -21,7 +21,7 @@ class CallPointModel:
         self.state: ModelState
         self.n_call_rooms = n_call_rooms
 
-    def run(self, simulation_time: float, skip_period: float = .0, mean_time=5.5):
+    def run(self, simulation_time: float, skip_period: float = .0, mean_time=5.5, mean_room_choosing_time=3.0):
         state = ModelState(
                     0,
                     Cashier(1),
@@ -29,7 +29,8 @@ class CallPointModel:
                     [],
                     self.n_call_rooms,
                     simulation_time,
-                    mean_time
+                    mean_time,
+                    mean_room_choosing_time
                 )
 
         state.add_end_event()

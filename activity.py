@@ -16,7 +16,8 @@ class ModelState:
                  events: List[Event],
                  n_call_rooms: int,
                  simulation_time: float,
-                 mean_time: float = 5.5) -> None:
+                 mean_time: float = 5.5,
+                 mean_room_choosing_time = 3.0) -> None:
 
         self._prev_visitor_id = 0
         self.curr_time = curr_time
@@ -32,6 +33,7 @@ class ModelState:
         self.prev_wait_queue_len_change_time = 0
         self.simulation_time = simulation_time
         self.mean_time = mean_time
+        self.mean_room_choosing_time = mean_room_choosing_time
 
     def reset(self):
         self.cashier1._visitors_processing_time = 0
@@ -194,7 +196,7 @@ def start_choose_call_room_atvivity(info: RoomChoosingInfo):
 
     state = info.state
 
-    talk_time = get_time_of_room_choosing()
+    talk_time = get_time_of_room_choosing(state.mean_room_choosing_time)
 
     info.visitor.choosing_call_room_start_time = state.curr_time
 

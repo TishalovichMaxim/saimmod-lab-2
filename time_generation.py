@@ -1,7 +1,7 @@
 import numpy as np
 
-def get_time_of_room_choosing():
-    return max(0, np.random.normal(3, 1))
+def get_time_of_room_choosing(mean_time: float = 3.0):
+    return max(0, np.random.normal(mean_time, 1))
 
 def get_time_of_payment():
     return max(0, np.random.normal(3, 1))

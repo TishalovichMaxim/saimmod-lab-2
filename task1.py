@@ -4,6 +4,7 @@ import scipy.stats
 import numpy as np
 import matplotlib.pyplot as plt
 from metrics import AllMetrics
+from typing import cast
 
 def task1(metrics: List[AllMetrics]):
     avg_queue_len_values = list(map(lambda metrics: metrics.avg_queue_len, metrics))
